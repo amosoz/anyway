@@ -16,6 +16,7 @@ from ..models import AccidentMarker, Involved, Vehicle, AccidentsNoLocation, Inv
 from .. import models
 from ..constants import CONST
 from ..utilities import ItmToWGS84, init_flask, CsvReader, time_delta, decode_hebrew,ImporterUI,truncate_tables
+from ..import importmail
 from functools import partial
 import logging
 
@@ -554,9 +555,14 @@ def get_provider_code(directory_name=None):
             return int(ans)
 
 
-def main(specific_folder, delete_all, path, batch_size, delete_start_date):
+def main(specific_folder, delete_all, path, batch_size, delete_start_date,
+         light=True, username='', password='', lastmail=False):
     import_ui = ImporterUI(path, specific_folder, delete_all)
     dir_name = import_ui.source_path()
+
+    if not light:
+        logging.info("Importing data from mail...")
+        importmail.main('cbs', dir_name, username, password, lastmail,unzip=True)
 
     if specific_folder:
         dir_list = [dir_name]

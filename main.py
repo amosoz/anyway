@@ -6,6 +6,8 @@ import re
 import sys
 
 
+
+
 @click.group()
 def cli():
     pass
@@ -48,12 +50,18 @@ def process():
 @click.option('--path', type=str, default="static/data/cbs")
 @click.option('--batch_size', type=int, default=5000)
 @click.option('--delete_start_date', type=str, default=None)
-
-def cbs(specific_folder, delete_all, path, batch_size, delete_start_date):
+@click.option('--light', is_flag=True, help='Import without downloading any new files')
+@click.option('--username', default='')
+@click.option('--password', default='')
+@click.option('--lastmail', is_flag=True)
+def cbs(specific_folder, delete_all, path, batch_size, delete_start_date,
+        light, username, password, lastmail):
     from anyway.parsers.cbs import main
 
+
     return main(specific_folder=specific_folder, delete_all=delete_all, path=path,
-                batch_size=batch_size, delete_start_date=delete_start_date)
+                batch_size=batch_size, delete_start_date=delete_start_date,
+                light=light, username=username, password=password, lastmail=lastmail)
 
 @process.command()
 @click.option('--specific_folder', is_flag=True, default=False)

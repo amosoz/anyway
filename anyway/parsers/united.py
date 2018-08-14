@@ -343,11 +343,11 @@ def main(light=True, username='', password='', lastmail=False):
     Calls importmail.py prior to importing to DB
     """
     collection = retrieve_ims_xml()
-
+    united_path = "static/data/united/"
     if not light:
         logging.info("Importing data from mail...")
-        importmail.main(username, password, lastmail)
-    united_path = "static/data/united/"
+        importmail.main('united-hatzala/data', united_path, username, password, lastmail,
+                         fileNamePrefix='UH-{0}_{1}-{2}.csv')
     total = 0
     logging.info("Loading United accidents...")
     for united_file in os.listdir(united_path):

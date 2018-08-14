@@ -8,9 +8,11 @@ from .utilities import time_delta
 import sys
 import argparse
 import logging
-
+import base64
+import io
+import zipfile
 ##############################################################################################
-# importmail.py is responsible for extracting and downloading united hatzala email attachments
+# importmail.py is responsible for extracting and downloading email attachments
 # Requirements: Setting an environment variable named MAILPASS containing the password
 #               And another named MAILUSER containing the mail account username
 # Note: 1. This script is being called by united.py prior to DB import
@@ -23,11 +25,8 @@ import logging
 #           --lastmail is currently set to default False
 ##############################################################################################
 
-mail_dir = 'united-hatzala/data'
-detach_dir = 'static/data/united'
 
-
-def main(username=None, password=None, lastmail=False):
+def main(mail_dir, detach_dir, username=None, password=None, lastmail=False, unzip=False, fileNamePrefix=None):
 
     username = username or os.environ.get('MAILUSER')
     password = password or os.environ.get('MAILPASS')
@@ -68,7 +67,7 @@ def main(username=None, password=None, lastmail=False):
             raise Exception('Error fetching mail')
 
         email_body = message_parts[0][1]
-        mail = email.message_from_string(email_body)
+        mail = email.message_from_string(email_body.decode('utf-8'))
         try:
             mtime = datetime.strptime(mail['Date'][:-6], '%a, %d %b %Y %H:%M:%S')
         except ValueError:
@@ -92,7 +91,8 @@ def main(username=None, password=None, lastmail=False):
             filename = part.get_filename()
 
             if bool(filename) and filename.endswith(".csv"):
-                filename = 'UH-{0}_{1}-{2}.csv'.format(mtime.date(), mtime.hour, mtime.minute)
+                if (fileNamePrefix):#if fileNamePrefix is not passed, the name of the file is not renamed
+                    filename = fileNamePrefix.format(mtime.date(), mtime.hour, mtime.minute)
                 filepath = os.path.join(detach_dir, filename)
                 if os.path.isfile(filepath):
                     break
@@ -102,6 +102,13 @@ def main(username=None, password=None, lastmail=False):
                 time.sleep(0.1)
                 with open(filepath, 'wb') as fp:
                     fp.write(part.get_payload(decode=True))
+
+            elif unzip and bool(filename) and filename.endswith(".zip"):
+                zip_bytes = base64.b64decode(part.get_payload())#check the 64!
+                file_wrapper = io.BytesIO(zip_bytes)
+                if zipfile.is_zipfile(file_wrapper):
+                    with zipfile.ZipFile(file_wrapper, 'r') as zf:
+                        zf.extractall(detach_dir)
 
         if file_found:
             break
